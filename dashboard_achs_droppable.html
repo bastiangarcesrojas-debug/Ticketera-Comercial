@@ -1,0 +1,959 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Ticketera Comercial - ACHS Salud</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=Lato:wght@400;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome para iconos -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- SheetJS para procesar Excel (.xlsx, .xls) y CSV de forma nativa en navegador -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+    <style>
+        body { font-family: 'Lato', sans-serif; background-color: #f8fafc; }
+        h1, h2, h3, h4 { font-family: 'Poppins', sans-serif; }
+
+        /* Ajustes de impresión para exportar PDF */
+        @media print {
+            * {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+                color-adjust: exact !important;
+            }
+            body { background-color: #ffffff !important; color: #000000 !important; font-size: 10px !important; }
+            aside, .no-print, button, .dropzone-container { display: none !important; }
+            main { display: block !important; padding: 0 !important; margin: 0 !important; }
+            .grid { display: block !important; width: 100% !important; }
+            .grid > div { page-break-inside: avoid !important; margin-bottom: 20px !important; box-shadow: none !important; border: 1px solid #cbd5e1 !important; }
+            .overflow-x-auto, .overflow-y-auto { overflow: visible !important; max-height: none !important; height: auto !important; }
+            header { border-bottom: 2px solid #009fe3 !important; padding-bottom: 10px !important; }
+            .shadow-sm, .shadow-inner { box-shadow: none !important; }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col transition-colors duration-300">
+
+    <!-- CABECERA DE MARCA ACHS SALUD -->
+    <header class="bg-white border-b border-slate-200 px-8 py-4 flex flex-col sm:flex-row justify-between items-center gap-4 shadow-sm">
+        <div class="flex items-center gap-4">
+            <div class="flex items-center gap-1.5 bg-[#009fe3]/5 px-3.5 py-2 rounded-xl border border-[#009fe3]/15">
+                <span class="bg-[#009fe3] text-white font-black text-sm px-2.5 py-0.5 rounded uppercase tracking-wider">achs</span>
+                <span class="text-[#002f56] font-black text-sm uppercase tracking-wide">salud</span>
+            </div>
+            <div class="h-8 w-[1px] bg-slate-200 hidden sm:block"></div>
+            <div>
+                <h1 class="text-base font-extrabold text-[#002f56] tracking-wide">Panel Supervisor - Ticketera Comercial</h1>
+                <p class="text-xs text-slate-400">Procesamiento local y seguro en navegador web (Zero-Server)</p>
+            </div>
+        </div>
+        
+        <div class="flex items-center gap-4">
+            <!-- BOTÓN CARGAR OTRO ARCHIVO -->
+            <button id="btn-reupload" onclick="triggerFileSelect()" class="hidden no-print bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold px-4 py-2.5 rounded-xl border border-slate-200 transition flex items-center gap-2 shadow-sm">
+                <i class="fa-solid fa-arrow-up-from-bracket"></i> Cargar nuevo Excel
+            </button>
+
+            <!-- BOTÓN EXPORTAR A PDF -->
+            <button id="btn-pdf" onclick="exportToPDF()" class="hidden no-print bg-[#009fe3] hover:bg-[#007fba] text-white text-xs font-bold px-4 py-2.5 rounded-xl border border-[#009fe3] transition flex items-center gap-2 shadow-sm">
+                <i class="fa-solid fa-file-pdf"></i> Exportar PDF
+            </button>
+            
+            <div class="text-right text-xs text-slate-500 hidden" id="timestamp-container">
+                <span class="font-bold text-[#002f56]"><i class="fa-regular fa-calendar-check mr-1.5 text-[#009fe3]"></i> Última Carga:</span>
+                <span id="update-timestamp"></span>
+            </div>
+        </div>
+    </header>
+
+    <!-- PANTALLA INICIAL: ZONA DRAG & DROP -->
+    <div id="dropzone-container" class="flex-grow flex items-center justify-center p-8 dropzone-container">
+        <div id="dropzone" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)" class="w-full max-w-2xl bg-white border-4 border-dashed border-[#009fe3]/30 hover:border-[#009fe3] rounded-3xl p-12 text-center shadow-lg transition-all duration-300 flex flex-col items-center justify-center gap-6 cursor-pointer">
+            <div class="h-20 w-22 bg-[#009fe3]/10 text-[#009fe3] rounded-2xl flex items-center justify-center text-4xl shadow-sm">
+                <i class="fa-solid fa-file-excel"></i>
+            </div>
+            <div>
+                <h2 class="text-lg font-bold text-[#002f56]">Arrastra tu reporte de tickets aquí</h2>
+                <p class="text-xs text-slate-400 mt-1">Soporta archivos Excel (.xlsx, .xls) y reportes CSV separados por coma o punto y coma</p>
+            </div>
+            <div class="text-slate-300 font-bold text-xs uppercase tracking-wider">— O —</div>
+            <button onclick="triggerFileSelect()" class="bg-[#009fe3] hover:bg-[#007fba] text-white text-xs font-bold px-6 py-3 rounded-xl transition shadow-md">
+                Examinar Archivo Local
+            </button>
+            <!-- Input de archivo oculto -->
+            <input type="file" id="file-loader" onchange="handleFileSelect(event)" accept=".xlsx, .xls, .csv" class="hidden" />
+        </div>
+    </div>
+
+    <!-- AREA DE TRABAJO DEL DASHBOARD (Oculto inicialmente) -->
+    <main id="dashboard-workspace" class="hidden flex-grow flex flex-col lg:flex-row">
+        
+        <!-- PANEL DE FILTROS LATERAL (SLICERS) -->
+        <aside class="w-full lg:w-72 bg-white p-6 border-r border-slate-200 flex flex-col gap-6 shrink-0">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                <span class="text-xs font-bold text-[#002f56] uppercase tracking-wider flex items-center gap-2">
+                    <i class="fa-solid fa-sliders text-[#009fe3]"></i> Slicers / Filtros
+                </span>
+                <button onclick="resetFilters()" class="text-[11px] text-[#009fe3] hover:underline font-bold flex items-center gap-1">
+                    <i class="fa-solid fa-arrow-rotate-left"></i> Reestablecer
+                </button>
+            </div>
+
+            <!-- FILTROS DE PERÍODO (MES Y AÑO DE CREACIÓN) -->
+            <div class="p-3 bg-slate-50 rounded-xl border border-slate-100 flex flex-col gap-3">
+                <span class="text-[10px] font-bold text-[#002f56] uppercase tracking-wider block"><i class="fa-regular fa-calendar text-[#009fe3] mr-1"></i> Período del Reporte</span>
+                
+                <div class="flex flex-col gap-1">
+                    <label class="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Año de Creación</label>
+                    <select id="filter-year" onchange="applyFilters()" class="w-full bg-white border border-slate-200 rounded-lg px-2 py-1.5 text-xs text-slate-700 font-bold focus:outline-none focus:border-[#009fe3]">
+                    </select>
+                </div>
+
+                <div class="flex flex-col gap-1">
+                    <label class="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Mes de Creación</label>
+                    <select id="filter-month" onchange="applyFilters()" class="w-full bg-white border border-slate-200 rounded-lg px-2 py-1.5 text-xs text-slate-700 font-bold focus:outline-none focus:border-[#009fe3]">
+                    </select>
+                </div>
+            </div>
+
+            <!-- FILTRO TEMA DE AYUDA (Solo afecta al Detalle Transaccional) -->
+            <div class="flex flex-col gap-1.5">
+                <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Tema de Ayuda</label>
+                <select id="filter-helptopic" onchange="applyFilters()" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-xs text-slate-700 focus:outline-none focus:border-[#009fe3]">
+                    <option value="Todos">Todos los Temas</option>
+                </select>
+            </div>
+
+            <!-- Filtro de Agente Asignado (Lista Desplegable) -->
+            <div class="flex flex-col gap-1.5">
+                <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Agente Asignado</label>
+                <select id="filter-agent" onchange="applyFilters()" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-xs text-slate-700 focus:outline-none focus:border-[#009fe3]">
+                    <option value="Todos">Todos los Agentes</option>
+                </select>
+            </div>
+
+            <!-- Filtro de Solicitante (Lista Desplegable) -->
+            <div class="flex flex-col gap-1.5">
+                <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Solicitante</label>
+                <select id="filter-requester" onchange="applyFilters()" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-xs text-slate-700 focus:outline-none focus:border-[#009fe3]">
+                    <option value="Todos">Todos los Solicitantes</option>
+                </select>
+            </div>
+
+            <!-- Menú Clínicas -->
+            <div class="flex flex-col gap-1.5">
+                <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Clínica</label>
+                <select id="filter-clinic" onchange="applyFilters()" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-xs text-slate-700 focus:outline-none focus:border-[#009fe3]">
+                    <option value="Todas">Todas las Clínicas</option>
+                </select>
+            </div>
+
+            <!-- Prioridad / Importancia -->
+            <div class="flex flex-col gap-1.5">
+                <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Prioridad (Importancia)</label>
+                <select id="filter-importance" onchange="applyFilters()" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-xs text-slate-700 focus:outline-none focus:border-[#009fe3]">
+                    <option value="Todas">Todas las Prioridades</option>
+                    <option value="Normal">Normal</option>
+                    <option value="Vencido">Vencido</option>
+                    <option value="Alerta">Alerta</option>
+                    <option value="Crítico">Crítico</option>
+                    <option value="Cerrado">Cerrado</option>
+                </select>
+            </div>
+
+            <!-- Estado -->
+            <div class="flex flex-col gap-1.5">
+                <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Estado Actual</label>
+                <select id="filter-state" onchange="applyFilters()" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-xs text-slate-700 focus:outline-none focus:border-[#009fe3]">
+                    <option value="Todos">Todos los Estados</option>
+                    <option value="Nuevo">Nuevo</option>
+                    <option value="Abierto">Abierto</option>
+                    <option value="Reabierto">Reabierto</option>
+                    <option value="Cerrado">Cerrado</option>
+                </select>
+            </div>
+
+            <!-- LEYENDA EXPLICATIVA DE ESTADOS -->
+            <div class="p-4 bg-slate-50 rounded-xl border border-slate-100 mt-2">
+                <span class="text-[10px] font-bold text-[#002f56] uppercase tracking-wider block mb-2">
+                    <i class="fa-solid fa-circle-info text-[#009fe3] mr-1"></i> Leyenda de Estados
+                </span>
+                <div class="space-y-2 text-xs">
+                    <div class="flex items-start gap-2">
+                        <span class="w-2.5 h-2.5 rounded-full bg-[#009fe3] mt-1 shrink-0"></span>
+                        <p class="text-slate-600"><strong>Normal:</strong> Ticket con SLA a tiempo y holgura mayor a 1 día.</p>
+                    </div>
+                    <div class="flex items-start gap-2">
+                        <span class="w-2.5 h-2.5 rounded-full bg-amber-500 mt-1 shrink-0"></span>
+                        <p class="text-slate-600"><strong>Alerta:</strong> Resta exactamente 1 día para la expiración del SLA.</p>
+                    </div>
+                    <div class="flex items-start gap-2">
+                        <span class="w-2.5 h-2.5 rounded-full bg-orange-500 mt-1 shrink-0"></span>
+                        <p class="text-slate-600"><strong>Crítico:</strong> El SLA expira hoy o restan 0 días.</p>
+                    </div>
+                    <div class="flex items-start gap-2">
+                        <span class="w-2.5 h-2.5 rounded-full bg-rose-500 mt-1 shrink-0"></span>
+                        <p class="text-slate-600"><strong>Vencido:</strong> El plazo del SLA ya se encuentra expirado.</p>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- AREA CENTRAL DE CONTENIDO -->
+        <div class="flex-grow p-8 flex flex-col gap-8 overflow-y-auto">
+            
+            <!-- TARJETAS KPI (Se filtran únicamente por Mes y Año) -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                
+                <!-- KPI 1: Activos -->
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+                    <div>
+                        <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Tickets Activos</span>
+                        <span id="kpi-active" class="text-3xl font-black text-[#002f56]">0</span>
+                    </div>
+                    <div class="h-11 w-11 rounded-xl bg-[#009fe3]/10 text-[#009fe3] flex items-center justify-center text-lg shadow-sm">
+                        <i class="fa-solid fa-ticket"></i>
+                    </div>
+                </div>
+
+                <!-- KPI 2: % SLA -->
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+                    <div>
+                        <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">% Cumplimiento SLA</span>
+                        <span id="kpi-sla" class="text-3xl font-black text-emerald-600">0.0%</span>
+                    </div>
+                    <div class="h-11 w-11 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center text-lg shadow-sm">
+                        <i class="fa-solid fa-shield-check"></i>
+                    </div>
+                </div>
+
+                <!-- KPI 3: Por Vencer -->
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+                    <div>
+                        <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Por Vencer</span>
+                        <span id="kpi-approaching" class="text-3xl font-black text-amber-500">0</span>
+                    </div>
+                    <div class="h-11 w-11 rounded-xl bg-amber-500/10 text-amber-600 flex items-center justify-center text-lg shadow-sm">
+                        <i class="fa-solid fa-hourglass-half"></i>
+                    </div>
+                </div>
+
+                <!-- KPI 4: SLA Vencido (Atrasado == "Sí") -->
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+                    <div>
+                        <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">SLA Vencido</span>
+                        <span id="kpi-overdue" class="text-3xl font-black text-rose-500">0</span>
+                    </div>
+                    <div class="h-11 w-11 rounded-xl bg-rose-500/10 text-rose-600 flex items-center justify-center text-lg shadow-sm">
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- GRÁFICOS (Se filtran únicamente por Mes y Año) -->
+            <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+                
+                <!-- Desempeño por Ejecutivo -->
+                <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm xl:col-span-2 flex flex-col justify-between">
+                    <div class="border-b border-slate-100 pb-3 mb-4">
+                        <h2 class="text-xs font-bold text-[#002f56] uppercase tracking-wider"><i class="fa-solid fa-users text-[#009fe3] mr-1.5"></i> Desempeño y Carga de Agentes</h2>
+                    </div>
+                    <div class="space-y-4" id="agents-chart">
+                    </div>
+                </div>
+
+                <!-- Distribución por Prioridad (Dona) -->
+                <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col">
+                    <div class="border-b border-slate-100 pb-3 mb-4 flex justify-between items-center">
+                        <h2 class="text-xs font-bold text-[#002f56] uppercase tracking-wider"><i class="fa-solid fa-circle-exclamation text-[#009fe3] mr-1.5"></i> Tickets por Prioridad</h2>
+                    </div>
+                    <div class="flex-grow flex flex-col items-center justify-center">
+                        <div id="priority-donut" class="h-32 w-32 rounded-full flex items-center justify-center relative transition-all duration-500 shadow-inner" style="background: conic-gradient(#e2e8f0 0% 100%);">
+                            <div class="bg-white rounded-full h-24 w-24 flex flex-col items-center justify-center text-center shadow-sm">
+                                <span class="text-[9px] text-slate-400 uppercase font-black tracking-wider">Normal/Venc/Alert</span>
+                                <span id="donut-center-total" class="text-xl font-bold text-[#002f56]">0</span>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-3 gap-3 w-full mt-6 text-center text-xs">
+                            <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                                <span class="inline-block w-2.5 h-2.5 rounded-full bg-[#009fe3] mb-0.5"></span>
+                                <span class="text-[9px] text-slate-400 block uppercase font-bold">Normal</span>
+                                <span id="legend-normal" class="font-extrabold text-[#002f56]">0</span>
+                            </div>
+                            <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                                <span class="inline-block w-2.5 h-2.5 rounded-full bg-rose-500 mb-0.5"></span>
+                                <span class="text-[9px] text-slate-400 block uppercase font-bold">Vencido</span>
+                                <span id="legend-vencido" class="font-extrabold text-[#002f56]">0</span>
+                            </div>
+                            <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                                <span class="inline-block w-2.5 h-2.5 rounded-full bg-amber-500 mb-0.5"></span>
+                                <span class="text-[9px] text-slate-400 block uppercase font-bold">Alerta</span>
+                                <span id="legend-alerta" class="font-extrabold text-[#002f56]">0</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- TABLA TRANSACCIONAL DE TICKETS (Ocultada en PDF de forma nativa por la clase 'no-print') -->
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col no-print">
+                <div class="p-4 bg-slate-50 border-b border-slate-150 flex flex-col sm:flex-row justify-between items-center gap-3">
+                    <span class="text-xs font-bold text-[#002f56] uppercase tracking-wider flex items-center gap-2">
+                        <i class="fa-solid fa-table text-[#009fe3]"></i> Detalle Transaccional de Casos (Reglas de SLA Calculadas)
+                    </span>
+                    <span id="table-badge" class="text-[10px] bg-white border border-slate-200 font-bold px-2.5 py-1 rounded-lg text-slate-500">
+                        Mostrando 0 tickets
+                    </span>
+                </div>
+                <div class="overflow-x-auto max-h-[350px]">
+                    <table class="w-full text-left border-collapse text-xs">
+                        <thead>
+                            <tr class="bg-slate-50/50 text-slate-500 font-bold uppercase text-[9px] tracking-wider border-b border-slate-200">
+                                <th class="py-3.5 px-4"># Ticket</th>
+                                <th class="py-3.5 px-4">Asunto</th>
+                                <th class="py-3.5 px-4">Solicitante</th>
+                                <th class="py-3.5 px-4">Clínica</th>
+                                <th class="py-3.5 px-4">Expiración SLA</th>
+                                <th class="py-3.5 px-4 text-center">Estado</th>
+                                <th class="py-3.5 px-4 text-center">Importancia</th>
+                            </tr>
+                        </thead>
+                        <tbody id="table-body" class="divide-y divide-slate-100 font-medium">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- CAPA DE ANÁLISIS ADICIONAL: TEMA DE AYUDA Y EVOLUCIÓN HISTÓRICA -->
+            <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                
+                <!-- GRAFICO: TICKETS ACTIVOS POR TEMA DE AYUDA (Filtrado solo por Período) -->
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 flex flex-col gap-6">
+                    <div class="border-b border-slate-100 pb-3">
+                        <h2 class="text-xs font-bold text-[#002f56] uppercase tracking-wider">
+                            <i class="fa-solid fa-list-check text-[#009fe3] mr-1.5"></i> Tickets Activos por Tema de Ayuda (Período Seleccionado)
+                        </h2>
+                    </div>
+                    <!-- Barras de temas de ayuda -->
+                    <div class="space-y-4 flex-grow overflow-y-auto max-h-[220px]" id="topics-chart">
+                    </div>
+                </div>
+
+                <!-- EVOLUCIÓN HISTÓRICA MENSUAL DE TICKETS (TOTAL HISTÓRICO - Sin Filtros) -->
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 flex flex-col gap-6">
+                    <div class="border-b border-slate-100 pb-3">
+                        <h2 class="text-xs font-bold text-[#002f56] uppercase tracking-wider">
+                            <i class="fa-solid fa-chart-line text-[#009fe3] mr-1.5"></i> Evolución Histórica de Tickets Ingresados (Total Histórico)
+                        </h2>
+                    </div>
+                    <!-- Gráfico de tendencia por barras -->
+                    <div class="h-48 flex items-end gap-3 pt-6 px-4" id="evolution-chart-bars">
+                    </div>
+                    <div class="flex justify-between text-[10px] font-bold text-slate-400 uppercase tracking-wider border-t border-slate-100 pt-3" id="evolution-chart-labels">
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- MOTOR DE CÓMPUTO Y PARSEO INTERNO (EXCEL / CSV A METRICAS) -->
+    <script>
+        let database = [];
+
+        const mesesOrdenados = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+        const mesesEspanolMapa = {
+            1: "Enero", 2: "Febrero", 3: "Marzo", 4: "Abril",
+            5: "Mayo", 6: "Junio", 7: "Julio", 8: "Agosto",
+            9: "Septiembre", 10: "Octubre", 11: "Noviembre", 12: "Diciembre"
+        };
+
+        const feriadosChile = [
+            "2026-01-01", "2026-04-03", "2026-05-01", "2026-05-21",
+            "2026-06-29", "2026-07-16", "2026-08-15", "2026-09-18",
+            "2026-09-19", "2026-10-12", "2026-10-31", "2026-11-01",
+            "2026-12-08", "2026-12-25"
+        ];
+
+        // 1. MANEJO DE ARCHIVOS Y EVENTOS DRAG & DROP
+        function triggerFileSelect() {
+            document.getElementById("file-loader").click();
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault();
+            document.getElementById("dropzone").classList.add("border-[#009fe3]", "bg-slate-50/50");
+        }
+
+        function handleDragLeave(e) {
+            e.preventDefault();
+            document.getElementById("dropzone").classList.remove("border-[#009fe3]", "bg-slate-50/50");
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            document.getElementById("dropzone").classList.remove("border-[#009fe3]", "bg-slate-50/50");
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                processUploadedFile(files[0]);
+            }
+        }
+
+        function handleFileSelect(e) {
+            const files = e.target.files;
+            if (files.length > 0) {
+                processUploadedFile(files[0]);
+            }
+        }
+
+        // 2. PARSEO Y PROCESAMIENTO CLIENT-SIDE
+        function processUploadedFile(file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array', cellDates: true });
+                    const firstSheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[firstSheetName];
+                    
+                    // Convertir a JSON
+                    const rawData = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
+                    
+                    if (rawData.length === 0) {
+                        alert("El archivo cargado está vacío o no contiene una estructura válida.");
+                        return;
+                    }
+
+                    // Normalizar nombres de columnas (limpiar espacios invisibles)
+                    const sampleRow = rawData[0];
+                    const colMap = {};
+                    Object.keys(sampleRow).forEach(k => {
+                        colMap[k.trim()] = k;
+                    });
+
+                    // Validar si tiene columnas mínimas requeridas
+                    if (!colMap["# Ticket"] && !colMap["Ticket"]) {
+                        alert("Falta la columna indispensable '# Ticket' o 'Ticket' en tu archivo.");
+                        return;
+                    }
+                    if (!colMap["Fecha de creación"] && !colMap["Fecha Creacion"]) {
+                        alert("Falta la columna indispensable 'Fecha de creación' en tu archivo.");
+                        return;
+                    }
+
+                    // Mapeo dinámico y cálculos lógicos equivalentes a Python
+                    database = rawData.map(row => {
+                        // Obtener valores dinámicamente tolerando ligeros cambios de nombre
+                        const valTicket = row[colMap["# Ticket"] || colMap["Ticket"]] || "";
+                        const valSubject = row[colMap["Asunto"]] || "Sin Asunto";
+                        const valRequester = row[colMap["Solicitante"]] || "Solicitante Anónimo";
+                        const valEmail = row[colMap["Correo solicitante"] || colMap["Email"]] || "";
+                        const valAgent = row[colMap["Agente asignado"] || colMap["Agente"]] || "Sin Asignar";
+                        const valState = row[colMap["Estado actual"] || colMap["Estado"]] || "Nuevo";
+                        const valHelpTopic = row[colMap["Tema de ayuda"] || colMap["Tema"]] || "Sin Clasificar";
+                        const valOverdueRaw = row[colMap["Atrasado"]] || "No";
+                        const valReopen = parseInt(row[colMap["Reabrir contador"] || colMap["Reaperturas"]]) || 0;
+
+                        // Parseo de fechas y ajuste de huso horario (-4 horas)
+                        const rawCreated = row[colMap["Fecha de creación"]];
+                        const rawClosed = row[colMap["Fecha de cierre"]];
+                        const rawExpiration = row[colMap["Fecha de expiración de SLA"]];
+
+                        const createdDate = convertToDateWithOffset(rawCreated, -4);
+                        const closedDate = convertToDateWithOffset(rawClosed, -4);
+                        const expirationDate = convertToDateWithOffset(rawExpiration, -4);
+
+                        // Asignación de Clínica (Power Query)
+                        const clinica = clasificarClinica(valEmail);
+
+                        // DAX calculations
+                        const slaPermitido = 3 * (valReopen + 1);
+                        const diasHabiles = calcularDiasHabilesSLA(createdDate, closedDate);
+                        
+                        let cumpleSla = null;
+                        if (closedDate && diasHabiles !== null) {
+                            cumpleSla = (diasHabiles <= slaPermitido) ? "Cumple" : "No Cumple";
+                        }
+
+                        let diasRestantes = 0;
+                        const hoy = new Date();
+                        if (!closedDate) {
+                            if (expirationDate) {
+                                const delta = expirationDate.getTime() - hoy.getTime();
+                                diasRestantes = Math.ceil(delta / (1000 * 60 * 60 * 24));
+                            }
+                        } else {
+                            diasRestantes = slaPermitido - diasHabiles;
+                        }
+
+                        let importancia = "Normal";
+                        if (closedDate) {
+                            importancia = "Cerrado";
+                        } else if (diasRestantes < 0) {
+                            importancia = "Vencido";
+                        } else if (diasRestantes === 0) {
+                            importancia = "Crítico";
+                        } else if (diasRestantes === 1) {
+                            importancia = "Alerta";
+                        }
+
+                        // Normalización de campo Atrasado ("Sí" / "No")
+                        let overdueNormalized = "No";
+                        if (valOverdueRaw) {
+                            const ovStr = String(valOverdueRaw).trim().toLowerCase();
+                            if (ovStr === "sí" || ovStr === "si" || ovStr === "yes" || ovStr === "true") {
+                                overdueNormalized = "Sí";
+                            }
+                        }
+
+                        return {
+                            id: String(valTicket),
+                            subject: String(valSubject),
+                            requester: String(valRequester),
+                            email: String(valEmail),
+                            clinicas: clinica,
+                            priority: row[colMap["Prioridad"]] || "Media",
+                            agent: String(valAgent),
+                            state: String(valState),
+                            created: createdDate ? formatDateToString(createdDate) : "",
+                            slaExpiration: expirationDate ? formatDateToString(expirationDate) : "",
+                            closedDate: closedDate ? formatDateToString(closedDate) : "",
+                            overdue: overdueNormalized,
+                            reopenCounter: valReopen,
+                            diasHabilesSLA: diasHabiles,
+                            slaPermitido: slaPermitido,
+                            cumpleSla: cumpleSla,
+                            diasRestantesSLA: diasRestantes,
+                            importancia: importancia,
+                            year: createdDate ? createdDate.getFullYear() : hoy.getFullYear(),
+                            month: createdDate ? mesesEspanolMapa[createdDate.getMonth() + 1] : "Enero",
+                            helpTopic: String(valHelpTopic)
+                        };
+                    });
+
+                    // Ocultar dropzone y mostrar workspace
+                    document.getElementById("dropzone-container").classList.add("hidden");
+                    document.getElementById("dashboard-workspace").classList.remove("hidden");
+                    document.getElementById("btn-reupload").classList.remove("hidden");
+                    document.getElementById("btn-pdf").classList.remove("hidden");
+                    document.getElementById("timestamp-container").classList.remove("hidden");
+
+                    // Inicializar los slicers dinámicos
+                    initPeriodDropdowns();
+                    initOtherDropdowns();
+                    applyFilters();
+
+                    document.getElementById("update-timestamp").innerText = new Date().toLocaleString();
+
+                } catch (error) {
+                    console.error(error);
+                    alert("Error crítico procesando las columnas y fechas del Excel: " + error.message);
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        // 3. AUXILIARES DE PROCESAMIENTO E IDENTIDAD CORPORATIVA
+        function convertToDateWithOffset(val, offsetHours) {
+            if (!val) return null;
+            let d = null;
+            if (val instanceof Date) {
+                d = new Date(val.getTime());
+            } else {
+                d = new Date(val);
+            }
+            if (isNaN(d.getTime())) return null;
+            // Aplicar desfase horario (-4 horas)
+            d.setHours(d.getHours() + offsetHours);
+            return d;
+        }
+
+        function formatDateToString(d) {
+            const pad = (n) => String(n).padStart(2, '0');
+            return `${pad(d.getDate())}-${pad(d.getMonth()+1)}-${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+        }
+
+        function clasificarClinica(email) {
+            if (!email) return "Corporativo";
+            const correo_upper = String(email).toUpperCase();
+            if (correo_upper.includes("ANDES")) return "Clínica Los Andes";
+            if (correo_upper.includes("LIRCAY")) return "Clínica Lircay";
+            if (correo_upper.includes("SUR")) return "Clínica del Sur";
+            if (correo_upper.includes("MAITENES")) return "Clínica Maitenes";
+            if (correo_upper.includes("PORTADA")) return "Clínica Portada";
+            if (correo_upper.includes("ATACAMA")) return "Clínica Atacama";
+            if (correo_upper.includes("PUERTOMONTT")) return "Clínica Puerto Montt";
+            if (correo_upper.includes("COIHUES")) return "Clínica Los Coihues";
+            return "Corporativo";
+        }
+
+        function calcularDiasHabilesSLA(fechaInicio, fechaFin) {
+            if (!fechaInicio || !fechaFin) return null;
+            
+            let count_habiles = 0;
+            // Crear copias de fechas
+            let current = new Date(fechaInicio.getFullYear(), fechaInicio.getMonth(), fechaInicio.getDate());
+            const end = new Date(fechaFin.getFullYear(), fechaFin.getMonth(), fechaFin.getDate());
+
+            while (current <= end) {
+                const dayOfWeek = current.getDay(); // Domingo = 0, Sábado = 6, Lunes = 1
+                const dateStr = current.toISOString().substring(0, 10);
+                
+                // Si es de Lunes a Viernes y no es feriado en Chile
+                if (dayOfWeek !== 0 && dayOfWeek !== 6 && !feriadosChile.includes(dateStr)) {
+                    count_habiles++;
+                }
+                current.setDate(current.getDate() + 1);
+            }
+
+            const hora_inicio = fechaInicio.getHours() * 60 + fechaInicio.getMinutes();
+            const hora_fin = fechaFin.getHours() * 60 + fechaFin.getMinutes();
+
+            if (hora_fin < hora_inicio) {
+                count_habiles = Math.max(1, count_habiles - 1);
+            }
+
+            return Math.max(1, count_habiles);
+        }
+
+        // ==========================================
+        // 4. SISTEMA DE FILTRADO Y RENDERIZADO WEB
+        // ==========================================
+
+        function initPeriodDropdowns() {
+            const selectYear = document.getElementById("filter-year");
+            const selectMonth = document.getElementById("filter-month");
+
+            const aniosUnicos = [...new Set(database.map(t => t.year))].sort((a,b) => b - a);
+            const mesesUnicosExistentes = [...new Set(database.map(t => t.month))];
+            const mesesUnicos = mesesOrdenados.filter(m => mesesUnicosExistentes.includes(m));
+
+            selectYear.innerHTML = "";
+            aniosUnicos.forEach(y => {
+                const opt = document.createElement("option");
+                opt.value = y; opt.innerText = y;
+                selectYear.appendChild(opt);
+            });
+
+            selectMonth.innerHTML = "";
+            mesesUnicos.forEach(m => {
+                const opt = document.createElement("option");
+                opt.value = m; opt.innerText = m;
+                selectMonth.appendChild(opt);
+            });
+
+            // Auto-seleccionar mes y año del reporte actual
+            const hoy = new Date();
+            const anioActual = hoy.getFullYear();
+            const mesActualNombre = mesesOrdenados[hoy.getMonth()];
+
+            if (aniosUnicos.includes(anioActual)) selectYear.value = anioActual;
+            else if (aniosUnicos.length > 0) selectYear.value = aniosUnicos[0];
+
+            if (mesesUnicos.includes(mesActualNombre)) selectMonth.value = mesActualNombre;
+            else if (mesesUnicos.length > 0) selectMonth.value = mesesUnicos[mesesUnicos.length - 1];
+        }
+
+        function initOtherDropdowns() {
+            // Agentes asignados
+            const selectAgent = document.getElementById("filter-agent");
+            const agentesUnicos = [...new Set(database.map(t => t.agent))].sort();
+            selectAgent.innerHTML = '<option value="Todos">Todos los Agentes</option>';
+            agentesUnicos.forEach(a => {
+                const opt = document.createElement("option");
+                opt.value = a; opt.innerText = a;
+                selectAgent.appendChild(opt);
+            });
+
+            // Solicitantes
+            const selectRequester = document.getElementById("filter-requester");
+            const solicitantesUnicos = [...new Set(database.map(t => t.requester))].sort();
+            selectRequester.innerHTML = '<option value="Todos">Todos los Solicitantes</option>';
+            solicitantesUnicos.forEach(s => {
+                const opt = document.createElement("option");
+                opt.value = s; opt.innerText = s;
+                selectRequester.appendChild(opt);
+            });
+
+            // Clínicas
+            const selectClinic = document.getElementById("filter-clinic");
+            const clinicasUnicas = [...new Set(database.map(t => t.clinicas))].sort();
+            selectClinic.innerHTML = '<option value="Todas">Todas las Clínicas</option>';
+            clinicasUnicas.forEach(c => {
+                const opt = document.createElement("option");
+                opt.value = c; opt.innerText = c;
+                selectClinic.appendChild(opt);
+            });
+
+            // Tema de Ayuda
+            const selectHelpTopic = document.getElementById("filter-helptopic");
+            const temasUnicos = [...new Set(database.map(t => t.helpTopic))].sort();
+            selectHelpTopic.innerHTML = '<option value="Todos">Todos los Temas</option>';
+            temasUnicos.forEach(t => {
+                const opt = document.createElement("option");
+                opt.value = t; opt.innerText = t;
+                selectHelpTopic.appendChild(opt);
+            });
+        }
+
+        function applyFilters() {
+            const yearVal = parseInt(document.getElementById("filter-year").value);
+            const monthVal = document.getElementById("filter-month").value;
+            const agentVal = document.getElementById("filter-agent").value;
+            const requesterVal = document.getElementById("filter-requester").value;
+            const clinicVal = document.getElementById("filter-clinic").value;
+            const importanceVal = document.getElementById("filter-importance").value;
+            const stateVal = document.getElementById("filter-state").value;
+            const helptopicVal = document.getElementById("filter-helptopic").value;
+
+            // 1. Filtrar por Período -> KPIs, gráficos medios y temas de ayuda
+            const periodData = database.filter(ticket => {
+                return ticket.year === yearVal && ticket.month === monthVal;
+            });
+
+            // 2. Filtrar el Detalle Transaccional de Casos con filtros cruzados
+            const tableData = periodData.filter(ticket => {
+                const matchAgent = (agentVal === "Todos") || (ticket.agent === agentVal);
+                const matchRequester = (requesterVal === "Todos") || (ticket.requester === requesterVal);
+                const matchClinic = (clinicVal === "Todas") || (ticket.clinicas === clinicVal);
+                const matchImportance = (importanceVal === "Todas") || (ticket.importancia === importanceVal);
+                const matchState = (stateVal === "Todos") || (ticket.state === stateVal);
+                const matchHelpTopic = (helptopicVal === "Todos") || (ticket.helpTopic === helptopicVal);
+
+                return matchAgent && matchRequester && matchClinic && matchImportance && matchState && matchHelpTopic;
+            });
+
+            renderDashboard(periodData, tableData);
+        }
+
+        function renderDashboard(periodData, tableData) {
+            // KPI 1: Activos
+            const active = periodData.filter(t => ["Nuevo", "Abierto", "Reabierto"].includes(t.state));
+            document.getElementById("kpi-active").innerText = active.length;
+
+            // KPI 2: % SLA
+            const cerrados = periodData.filter(t => t.closedDate !== "");
+            const cumpleCount = cerrados.filter(t => t.cumpleSla === "Cumple").length;
+            const pctSla = cerrados.length > 0 ? ((cumpleCount / cerrados.length) * 100).toFixed(1) : "100.0";
+            document.getElementById("kpi-sla").innerText = pctSla + "%";
+
+            // KPI 3: Por Vencer
+            const porVencer = periodData.filter(t => t.overdue === "No" && ["Nuevo", "Abierto", "Reabierto"].includes(t.state));
+            document.getElementById("kpi-approaching").innerText = porVencer.length;
+
+            // KPI 4: SLA Vencido
+            const vencidos = periodData.filter(t => t.overdue === "Sí");
+            document.getElementById("kpi-overdue").innerText = vencidos.length;
+
+            // Gráfico: Desempeño Ejecutivos
+            const agentesList = [...new Set(database.map(t => t.agent))].sort();
+            const agentsContainer = document.getElementById("agents-chart");
+            agentsContainer.innerHTML = "";
+
+            agentesList.forEach(agent => {
+                const agCerrado = periodData.filter(t => t.agent === agent && t.closedDate !== "");
+                const agCumple = agCerrado.filter(t => t.cumpleSla === "Cumple").length;
+                const agActivos = periodData.filter(t => t.agent === agent && ["Nuevo", "Abierto", "Reabierto"].includes(t.state)).length;
+                
+                let slaAgent = 100;
+                if (agCerrado.length > 0) {
+                    slaAgent = Math.round((agCumple / agCerrado.length) * 100);
+                }
+
+                let colorBar = "bg-[#009fe3]";
+                if (slaAgent < 80) colorBar = "bg-rose-500";
+                else if (slaAgent < 90) colorBar = "bg-amber-500";
+
+                agentsContainer.innerHTML += `
+                    <div class="space-y-1.5">
+                        <div class="flex justify-between items-center text-xs">
+                            <span class="text-[#002f56] font-bold flex items-center gap-1">${agent} <span class="text-[9px] text-slate-400 font-normal">(${agActivos} activos / ${agCerrado.length} cerrados)</span></span>
+                            <span class="font-extrabold text-[#002f56]">${slaAgent}%</span>
+                        </div>
+                        <div class="h-3 bg-slate-100 rounded-full overflow-hidden border border-slate-200 flex">
+                            <div class="${colorBar} h-full rounded-full transition-all duration-500" style="width: ${slaAgent}%"></div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            // Gráfico Dona: Prioridad
+            const normCount = periodData.filter(t => t.importancia === "Normal").length;
+            const vencCount = periodData.filter(t => t.importancia === "Vencido").length;
+            const alertCount = periodData.filter(t => t.importancia === "Alerta").length;
+            const totalDona = normCount + vencCount + alertCount;
+
+            document.getElementById("legend-normal").innerText = normCount;
+            document.getElementById("legend-vencido").innerText = vencCount;
+            document.getElementById("legend-alerta").innerText = alertCount;
+            document.getElementById("donut-center-total").innerText = totalDona;
+
+            const donut = document.getElementById("priority-donut");
+            if (totalDona > 0) {
+                const normPct = (normCount / totalDona) * 100;
+                const vencPct = (vencCount / totalDona) * 100;
+
+                donut.style.background = `conic-gradient(
+                    #009fe3 0% ${normPct}%, 
+                    #f43f5e ${normPct}% ${normPct + vencPct}%, 
+                    #f59e0b ${normPct + vencPct}% 100%
+                )`;
+            } else {
+                donut.style.background = "#e2e8f0";
+            }
+
+            // Detalle Transaccional de Casos
+            const body = document.getElementById("table-body");
+            body.innerHTML = "";
+
+            if (tableData.length === 0) {
+                body.innerHTML = '<tr><td colspan="7" class="py-8 text-center text-slate-400 font-bold">Sin resultados para los filtros actuales</td></tr>';
+            } else {
+                tableData.forEach(t => {
+                    let alertClass = "bg-slate-100 text-slate-700";
+                    if (t.importancia === "Vencido") alertClass = "bg-rose-500/10 text-rose-700 border border-rose-500/20";
+                    else if (t.importancia === "Crítico") alertClass = "bg-orange-500/10 text-orange-700 border border-orange-500/20";
+                    else if (t.importancia === "Alerta") alertClass = "bg-amber-500/10 text-amber-700 border border-amber-500/20";
+                    else if (t.importancia === "Normal") alertClass = "bg-[#009fe3]/10 text-[#009fe3] border border-[#009fe3]/20";
+                    else if (t.importancia === "Cerrado") alertClass = "bg-emerald-500/10 text-emerald-700 border border-emerald-500/20";
+
+                    body.innerHTML += `
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="py-3.5 px-4 font-mono font-bold text-[#009fe3]">${t.id}</td>
+                            <td class="py-3.5 px-4 font-bold text-[#002f56] truncate max-w-[200px]" title="${t.subject}">${t.subject}</td>
+                            <td class="py-3.5 px-4 text-slate-600">${t.requester}</td>
+                            <td class="py-3.5 px-4 text-slate-500">${t.clinicas}</td>
+                            <td class="py-3.5 px-4 text-slate-500 font-mono">${t.slaExpiration}</td>
+                            <td class="py-3.5 px-4 text-center">
+                                <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-slate-100 text-slate-600 border border-slate-200">
+                                    ${t.state}
+                                </span>
+                            </td>
+                            <td class="py-3.5 px-4 text-center">
+                                <span class="px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wide inline-block ${alertClass}">
+                                    ${t.importancia}
+                                </span>
+                            </td>
+                        </tr>
+                    `;
+                });
+            }
+            document.getElementById("table-badge").innerText = `Mostrando ${tableData.length} de ${periodData.length} del período`;
+
+            // Renderizar gráficos inferiores
+            renderTopicsChart(periodData);
+            renderEvolutionChart(database);
+        }
+
+        // Gráfico de temas de ayuda activos
+        function renderTopicsChart(periodData) {
+            const activeTickets = periodData.filter(t => ["Nuevo", "Abierto", "Reabierto"].includes(t.state));
+            const topicCounts = {};
+            activeTickets.forEach(t => {
+                const topic = t.helpTopic || "Sin Clasificar";
+                topicCounts[topic] = (topicCounts[topic] || 0) + 1;
+            });
+
+            const sortedTopics = Object.keys(topicCounts).sort((a,b) => topicCounts[b] - topicCounts[a]);
+            const container = document.getElementById("topics-chart");
+            container.innerHTML = "";
+
+            if (sortedTopics.length === 0) {
+                container.innerHTML = '<div class="text-xs text-slate-400 font-bold m-auto py-12 text-center">No hay tickets activos en este período</div>';
+                return;
+            }
+
+            const maxCount = Math.max(...Object.values(topicCounts));
+
+            sortedTopics.forEach(topic => {
+                const count = topicCounts[topic];
+                const pct = maxCount > 0 ? (count / maxCount) * 100 : 0;
+                
+                container.innerHTML += `
+                    <div class="space-y-1">
+                        <div class="flex justify-between items-center text-xs">
+                            <span class="text-[#002f56] font-bold text-[11px] truncate max-w-[200px]" title="${topic}">${topic}</span>
+                            <span class="font-extrabold text-[#009fe3] text-[11px]">${count} activos</span>
+                        </div>
+                        <div class="h-2.5 bg-slate-150 rounded-full overflow-hidden border border-slate-200/40 flex">
+                            <div class="bg-[#009fe3] h-full rounded-full transition-all duration-500" style="width: ${pct}%"></div>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        // Gráfico histórico de evolución
+        function renderEvolutionChart(allData) {
+            const grupos = {};
+            allData.forEach(t => {
+                const key = `${t.year}-${t.month}`;
+                if (!grupos[key]) {
+                    grupos[key] = { year: t.year, month: t.month, count: 0 };
+                }
+                grupos[key].count++;
+            });
+
+            const sortedKeys = Object.keys(grupos).sort((a, b) => {
+                const [yearA, monthA] = a.split("-");
+                const [yearB, monthB] = b.split("-");
+                if (yearA !== yearB) return yearA - yearB;
+                return mesesOrdenados.indexOf(monthA) - mesesOrdenados.indexOf(monthB);
+            });
+
+            const chartBars = document.getElementById("evolution-chart-bars");
+            const chartLabels = document.getElementById("evolution-chart-labels");
+            chartBars.innerHTML = "";
+            chartLabels.innerHTML = "";
+
+            if (sortedKeys.length === 0) {
+                chartBars.innerHTML = '<div class="text-xs text-slate-400 font-bold m-auto">Sin datos históricos registrados</div>';
+                return;
+            }
+
+            const maxCount = Math.max(...sortedKeys.map(k => grupos[k].count));
+
+            sortedKeys.forEach(key => {
+                const group = grupos[key];
+                const pct = maxCount > 0 ? (group.count / maxCount) * 100 : 0;
+
+                const barCol = document.createElement("div");
+                barCol.className = "flex-grow flex flex-col items-center gap-1 group relative h-full justify-end cursor-pointer";
+                barCol.innerHTML = `
+                    <span class="absolute bottom-full mb-1.5 opacity-0 group-hover:opacity-100 bg-[#002f56] text-white text-[10px] font-bold px-2 py-1 rounded shadow-lg transition-opacity duration-200 pointer-events-none z-10 whitespace-nowrap">
+                        ${group.count} Tickets
+                    </span>
+                    <div class="w-full max-w-[40px] bg-[#009fe3]/20 hover:bg-[#009fe3] rounded-t-lg transition-all duration-300" style="height: ${pct}%"></div>
+                `;
+                chartBars.appendChild(barCol);
+
+                const labelDiv = document.createElement("div");
+                labelDiv.className = "flex-grow text-center text-[10px] text-slate-500 font-extrabold max-w-[70px] truncate";
+                labelDiv.innerText = `${group.month.substring(0,3)}. ${group.year}`;
+                chartLabels.appendChild(labelDiv);
+            });
+        }
+
+        function resetFilters() {
+            document.getElementById("filter-agent").value = "Todos";
+            document.getElementById("filter-requester").value = "Todos";
+            document.getElementById("filter-clinic").value = "Todas";
+            document.getElementById("filter-importance").value = "Todas";
+            document.getElementById("filter-state").value = "Todos";
+            document.getElementById("filter-helptopic").value = "Todos";
+            
+            initPeriodDropdowns();
+            applyFilters();
+        }
+    </script>
+</body>
+</html>
