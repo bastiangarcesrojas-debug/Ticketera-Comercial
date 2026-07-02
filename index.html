@@ -372,6 +372,8 @@
                                 <th class="py-3.5 px-4">Expiración SLA</th>
                                 <th class="py-3.5 px-4 text-center">Días Restantes SLA</th>
                                 <th class="py-3.5 px-4">Agente Asignado</th>
+                                <th class="py-3.5 px-4">Última actualización</th>
+                                <th class="py-3.5 px-4 text-center">Respuesta de Usuario</th>
                                 <th class="py-3.5 px-4 text-center">Estado</th>
                             </tr>
                         </thead>
@@ -419,7 +421,8 @@
     <!-- MOTOR DE CÓMPUTO Y PARSEO INTERNO (EXCEL / CSV A METRICAS) -->
     <script>
         let database = [];
-        let kpiTableFilter = null;
+        let kpiMainFilter = null;
+        let riskFilter = null;
 
         const mesesOrdenados = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
         const mesesEspanolMapa = {
@@ -513,11 +516,14 @@
                         const valHelpTopic = row[colMap["Tema de ayuda"] || colMap["Tema"]] || "Sin Clasificar";
                         const valOverdueRaw = row[colMap["Atrasado"]] || "No";
                         const valReopen = parseInt(row[colMap["Reabrir contador"] || colMap["Reaperturas"]]) || 0;
+                        const valHilos = parseInt(row[colMap["# Hilos"] || colMap["Hilos"]]) || 0;
+                        const rawLastUpdate = row[colMap["Última actualización"] || colMap["Ultima actualización"]];
 
                         // Parseo de fechas y ajuste de huso horario (-4 horas)
                         const rawCreated = row[colMap["Fecha de creación"]];
                         const rawClosed = row[colMap["Fecha de cierre"]];
                         const rawExpiration = row[colMap["Fecha de expiración de SLA"]];
+                        const lastUpdateDate = convertToDateWithOffset(rawLastUpdate, -4);
 
                         const createdDate = convertToDateWithOffset(rawCreated, -4);
                         const closedDate = convertToDateWithOffset(rawClosed, -4);
@@ -596,6 +602,19 @@
                             }
                         }
 
+                        // Determinar si el usuario respondió
+                        let respuestaUsuario = "";
+
+                        if (String(valState).trim().toLowerCase() === "pendiente (usuario)") {
+
+                            if (valHilos % 2 === 0) {
+                                respuestaUsuario = "Sin respuesta usuario";
+                            } else {
+                                respuestaUsuario = "Consulta respondida";
+                            }
+
+                        }
+
                         return {
                             id: String(valTicket),
                             subject: String(valSubject),
@@ -605,6 +624,9 @@
                             priority: row[colMap["Prioridad"]] || "Media",
                             agent: String(valAgent),
                             state: String(valState),
+                            hilos: valHilos,
+                            respuestaUsuario: respuestaUsuario,
+                            ultimaActualizacion: lastUpdateDate ? formatDateToString(lastUpdateDate) : "",
                             created: createdDate ? formatDateToString(createdDate) : "",
                             slaExpiration: expirationDate ? formatDateToString(expirationDate) : "",
                             closedDate: closedDate ? formatDateToString(closedDate) : "",
@@ -843,28 +865,31 @@ function initOtherDropdowns() {
 
 function filterTableByKPI(tipo) {
 
-    // Si hago clic nuevamente en la misma tarjeta, se quita el filtro
-    if (kpiTableFilter === tipo) {
-        kpiTableFilter = null;
+    const riesgos = [
+        "riesgo_hoy",
+        "riesgo_manana",
+        "riesgo_tres_dias",
+        "riesgo_mas_tres"
+    ];
+
+    if (riesgos.includes(tipo)) {
+        riskFilter = (riskFilter === tipo) ? null : tipo;
     } else {
-        kpiTableFilter = tipo;
+        kpiMainFilter = (kpiMainFilter === tipo) ? null : tipo;
     }
 
-    // Quitar selección de todas las tarjetas
     document.querySelectorAll(".risk-card").forEach(card => {
         card.classList.remove("kpi-selected");
     });
 
-    // Resaltar la tarjeta seleccionada
-    if (kpiTableFilter !== null) {
+    if (kpiMainFilter !== null) {
+        const cardMain = document.querySelector(`[data-kpi="${kpiMainFilter}"]`);
+        if (cardMain) cardMain.classList.add("kpi-selected");
+    }
 
-        const card = document.querySelector(
-            `[data-kpi="${kpiTableFilter}"]`
-        );
-
-        if (card) {
-            card.classList.add("kpi-selected");
-        }
+    if (riskFilter !== null) {
+        const cardRisk = document.querySelector(`[data-kpi="${riskFilter}"]`);
+        if (cardRisk) cardRisk.classList.add("kpi-selected");
     }
 
     applyFilters();
@@ -962,42 +987,43 @@ if (selectedDate && ticket.slaExpiration) {
 }
 
         let matchKPI = true;
+        let matchRisk = true;
 
-        if (kpiTableFilter === "por_vencer") {
+        if (kpiMainFilter === "por_vencer") {
             const fechaExpiracion = convertirStringAFecha(ticket.slaExpiration);
             matchKPI = fechaExpiracion && fechaExpiracion >= new Date();
         }
 
-        if (kpiTableFilter === "vencido") {
+        if (kpiMainFilter === "vencido") {
             const fechaExpiracion = convertirStringAFecha(ticket.slaExpiration);
             matchKPI = fechaExpiracion && fechaExpiracion < new Date();
         }
 
-        if (kpiTableFilter === "reabierto") {
+        if (kpiMainFilter === "reabierto") {
             matchKPI = String(ticket.state).trim().toLowerCase() === "reabierto";
         }
 
-        if (kpiTableFilter === "pendiente_usuario") {
+        if (kpiMainFilter === "pendiente_usuario") {
             matchKPI = String(ticket.state).trim().toLowerCase() === "pendiente (usuario)";
         }
 
         const diasCalendario = diferenciaDiasCalendarioDesdeString(ticket.slaExpiration);
 
-        if (kpiTableFilter === "riesgo_hoy") {
-            matchKPI = diasCalendario === 0;
+        if (riskFilter === "riesgo_hoy") {
+            matchRisk = diasCalendario === 0;
         }
 
-        if (kpiTableFilter === "riesgo_manana") {
-            matchKPI = diasCalendario === 1;
+        if (riskFilter === "riesgo_manana") {
+            matchRisk = diasCalendario === 1;
         }
 
-        if (kpiTableFilter === "riesgo_tres_dias") {
-            matchKPI = diasCalendario >= 2 &&
+        if (riskFilter === "riesgo_tres_dias") {
+            matchRisk = diasCalendario >= 2 &&
                     diasCalendario <= 3;
         }
 
-        if (kpiTableFilter === "riesgo_mas_tres") {
-            matchKPI = diasCalendario > 3;
+        if (riskFilter === "riesgo_mas_tres") {
+            matchRisk = diasCalendario > 3;
         }
 
         return ticketActivo &&
@@ -1008,7 +1034,8 @@ if (selectedDate && ticket.slaExpiration) {
             matchState &&
             matchHelpTopic &&
             matchDate &&
-            matchKPI;
+            matchKPI &&
+            matchRisk;
     });
 
     renderDashboard(periodData, tableData);
@@ -1111,20 +1138,22 @@ if (selectedDate && ticket.slaExpiration) {
             });
 
             // Riesgo SLA Tickets Activos por día calendario
-            const vencenHoy = activosTotales.filter(t =>
+            const riskData = tableData;
+
+            const vencenHoy = riskData.filter(t =>
                 diferenciaDiasCalendarioDesdeString(t.slaExpiration) === 0
             ).length;
 
-            const vencenManana = activosTotales.filter(t =>
+            const vencenManana = riskData.filter(t =>
                 diferenciaDiasCalendarioDesdeString(t.slaExpiration) === 1
             ).length;
 
-            const vencenTresDias = activosTotales.filter(t =>
+            const vencenTresDias = riskData.filter(t =>
                 diferenciaDiasCalendarioDesdeString(t.slaExpiration) >= 2 &&
                 diferenciaDiasCalendarioDesdeString(t.slaExpiration) <= 3
             ).length;
 
-            const masDeTresDias = activosTotales.filter(t =>
+            const masDeTresDias = riskData.filter(t =>
                 diferenciaDiasCalendarioDesdeString(t.slaExpiration) > 3
             ).length;
 
@@ -1138,7 +1167,7 @@ if (selectedDate && ticket.slaExpiration) {
             body.innerHTML = "";
 
             if (tableData.length === 0) {
-                body.innerHTML = '<tr><td colspan="8" class="py-8 text-center text-slate-400 font-bold">Sin resultados para los filtros actuales</td></tr>';
+                body.innerHTML = '<tr><td colspan="10" class="py-8 text-center text-slate-400 font-bold">Sin resultados para los filtros actuales</td></tr>';
             } else {
                 tableData.forEach(t => {
                     let alertClass = "bg-slate-100 text-slate-700";
@@ -1170,6 +1199,14 @@ if (selectedDate && ticket.slaExpiration) {
 
                             <td class="py-3.5 px-4 text-slate-600">
                                 ${t.agent}
+                            </td>
+
+                            <td class="py-3.5 px-4 text-slate-500 font-mono">
+                                ${t.ultimaActualizacion}
+                            </td>
+
+                            <td class="py-3.5 px-4 text-center font-bold text-slate-600">
+                                ${t.respuestaUsuario || "-"}
                             </td>
 
                             <td class="py-3.5 px-4 text-center">
