@@ -667,6 +667,18 @@
             return `${pad(d.getDate())}-${pad(d.getMonth()+1)}-${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
         }
 
+        function convertirStringAFecha(fechaStr) {
+            if (!fechaStr) return null;
+
+            const [fechaParte, horaParte] = fechaStr.split(" ");
+            const [dia, mes, anio] = fechaParte.split("-").map(Number);
+            const [hora = 0, minuto = 0, segundo = 0] = horaParte
+                ? horaParte.split(":").map(Number)
+                : [0, 0, 0];
+
+            return new Date(anio, mes - 1, dia, hora, minuto, segundo);
+        }
+
         function diferenciaDiasCalendarioDesdeString(fechaStr) {
             if (!fechaStr) return null;
 
@@ -956,7 +968,8 @@ if (selectedDate && ticket.slaExpiration) {
         }
 
         if (kpiTableFilter === "vencido") {
-            matchKPI = ticket.diasRestantesSLA < 0;
+            const fechaExpiracion = convertirStringAFecha(ticket.slaExpiration);
+            matchKPI = fechaExpiracion && fechaExpiracion < new Date();
         }
 
         if (kpiTableFilter === "reabierto") {
@@ -1019,9 +1032,10 @@ if (selectedDate && ticket.slaExpiration) {
             document.getElementById("kpi-approaching").innerText = porVencer.length;
 
             // KPI 4: SLA Vencido
-            const vencidos = activosTotales.filter(t =>
-                t.diasRestantesSLA < 0
-            );
+            const vencidos = activosTotales.filter(t => {
+                const fechaExpiracion = convertirStringAFecha(t.slaExpiration);
+                return fechaExpiracion && fechaExpiracion < new Date();
+            });
             document.getElementById("kpi-overdue").innerText = vencidos.length;
 
             // KPI 5: Tickets Reabiertos
