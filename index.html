@@ -17,6 +17,12 @@
 
     <style>
         body { font-family: 'Lato', sans-serif; background-color: #f8fafc; }
+        .kpi-selected{
+            border:2px solid #009fe3 !important;
+            box-shadow:0 0 0 4px rgba(0,159,227,.18) !important;
+            transform:scale(1.02);
+            transition:.2s;
+        }
         h1, h2, h3, h4 { font-family: 'Poppins', sans-serif; }
 
         /* Ajustes de impresión para exportar PDF */
@@ -104,22 +110,43 @@
                 </button>
             </div>
 
-            <!-- FILTROS DE PERÍODO (MES Y AÑO DE CREACIÓN) -->
-            <div class="p-3 bg-slate-50 rounded-xl border border-slate-100 flex flex-col gap-3">
-                <span class="text-[10px] font-bold text-[#002f56] uppercase tracking-wider block"><i class="fa-regular fa-calendar text-[#009fe3] mr-1"></i> Período del Reporte</span>
-                
-                <div class="flex flex-col gap-1">
-                    <label class="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Año de Creación</label>
-                    <select id="filter-year" onchange="applyFilters()" class="w-full bg-white border border-slate-200 rounded-lg px-2 py-1.5 text-xs text-slate-700 font-bold focus:outline-none focus:border-[#009fe3]">
-                    </select>
-                </div>
+<!-- FILTROS DE PERÍODO (MES Y AÑO DE CREACIÓN) -->
+<div class="p-3 bg-slate-50 rounded-xl border border-slate-100 flex flex-col gap-3">
+    <span class="text-[10px] font-bold text-[#002f56] uppercase tracking-wider block">
+        <i class="fa-regular fa-calendar text-[#009fe3] mr-1"></i>
+        Período del Reporte
+    </span>
 
-                <div class="flex flex-col gap-1">
-                    <label class="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Mes de Creación</label>
-                    <select id="filter-month" onchange="applyFilters()" class="w-full bg-white border border-slate-200 rounded-lg px-2 py-1.5 text-xs text-slate-700 font-bold focus:outline-none focus:border-[#009fe3]">
-                    </select>
-                </div>
-            </div>
+    <div class="flex flex-col gap-1">
+        <label class="text-[9px] font-bold text-slate-400 uppercase tracking-wider">
+            Año de Creación
+        </label>
+        <select id="filter-year" onchange="applyFilters()" class="w-full bg-white border border-slate-200 rounded-lg px-2 py-1.5 text-xs text-slate-700 font-bold focus:outline-none focus:border-[#009fe3]">
+        </select>
+    </div>
+
+    <div class="flex flex-col gap-1">
+        <label class="text-[9px] font-bold text-slate-400 uppercase tracking-wider">
+            Mes de Creación
+        </label>
+        <select id="filter-month" onchange="applyFilters()" class="w-full bg-white border border-slate-200 rounded-lg px-2 py-1.5 text-xs text-slate-700 font-bold focus:outline-none focus:border-[#009fe3]">
+        </select>
+    </div>
+</div>
+
+<!-- FILTRO FECHA EXPIRACIÓN SLA - Solo afecta tabla detalle -->
+<div class="flex flex-col gap-1.5">
+    <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+        Fecha Expiración SLA
+    </label>
+
+    <input
+        type="date"
+        id="filter-date"
+        onchange="applyFilters()"
+        class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-xs text-slate-700 focus:outline-none focus:border-[#009fe3]"
+    >
+</div>
 
             <!-- FILTRO TEMA DE AYUDA (Solo afecta al Detalle Transaccional) -->
             <div class="flex flex-col gap-1.5">
@@ -128,22 +155,35 @@
                     <option value="Todos">Todos los Temas</option>
                 </select>
             </div>
+            
+<!-- Filtro de Solicitante (Búsqueda Libre) -->
+<div class="flex flex-col gap-1.5">
+    <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+        Solicitante
+    </label>
 
-            <!-- Filtro de Agente Asignado (Lista Desplegable) -->
-            <div class="flex flex-col gap-1.5">
-                <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Agente Asignado</label>
-                <select id="filter-agent" onchange="applyFilters()" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-xs text-slate-700 focus:outline-none focus:border-[#009fe3]">
-                    <option value="Todos">Todos los Agentes</option>
-                </select>
-            </div>
+    <input
+        type="text"
+        id="filter-requester"
+        placeholder="Buscar solicitante..."
+        onkeyup="applyFilters()"
+        class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-xs text-slate-700 focus:outline-none focus:border-[#009fe3]"
+    >
+</div>
 
-            <!-- Filtro de Solicitante (Lista Desplegable) -->
-            <div class="flex flex-col gap-1.5">
-                <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Solicitante</label>
-                <select id="filter-requester" onchange="applyFilters()" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-xs text-slate-700 focus:outline-none focus:border-[#009fe3]">
-                    <option value="Todos">Todos los Solicitantes</option>
-                </select>
-            </div>
+<!-- Filtro de Agente Asignado - Solo afecta tabla detalle -->
+<div class="flex flex-col gap-1.5">
+    <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+        Agente Asignado
+    </label>
+
+    <select
+        id="filter-agent"
+        onchange="applyFilters()"
+        class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-xs text-slate-700 focus:outline-none focus:border-[#009fe3]">
+        <option value="Todos">Todos los Agentes</option>
+    </select>
+</div>
 
             <!-- Menú Clínicas -->
             <div class="flex flex-col gap-1.5">
@@ -155,14 +195,14 @@
 
             <!-- Prioridad / Importancia -->
             <div class="flex flex-col gap-1.5">
-                <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Prioridad (Importancia)</label>
+                <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Riesgo SLA</label>
                 <select id="filter-importance" onchange="applyFilters()" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-xs text-slate-700 focus:outline-none focus:border-[#009fe3]">
-                    <option value="Todas">Todas las Prioridades</option>
-                    <option value="Normal">Normal</option>
-                    <option value="Vencido">Vencido</option>
-                    <option value="Alerta">Alerta</option>
-                    <option value="Crítico">Crítico</option>
-                    <option value="Cerrado">Cerrado</option>
+                    <option value="Todas">Todos los Riesgos</option>
+                    <option value="riesgo_hoy">Vencen Hoy</option>
+                    <option value="riesgo_manana">Vencen Mañana</option>
+                    <option value="riesgo_tres_dias">Vencen en 3 días</option>
+                    <option value="riesgo_mas_tres">+ de 3 días</option>
+                    <option value="vencido">SLA Vencido</option>
                 </select>
             </div>
 
@@ -171,44 +211,16 @@
                 <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Estado Actual</label>
                 <select id="filter-state" onchange="applyFilters()" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-xs text-slate-700 focus:outline-none focus:border-[#009fe3]">
                     <option value="Todos">Todos los Estados</option>
-                    <option value="Nuevo">Nuevo</option>
-                    <option value="Abierto">Abierto</option>
-                    <option value="Reabierto">Reabierto</option>
-                    <option value="Cerrado">Cerrado</option>
                 </select>
             </div>
 
-            <!-- LEYENDA EXPLICATIVA DE ESTADOS -->
-            <div class="p-4 bg-slate-50 rounded-xl border border-slate-100 mt-2">
-                <span class="text-[10px] font-bold text-[#002f56] uppercase tracking-wider block mb-2">
-                    <i class="fa-solid fa-circle-info text-[#009fe3] mr-1"></i> Leyenda de Estados
-                </span>
-                <div class="space-y-2 text-xs">
-                    <div class="flex items-start gap-2">
-                        <span class="w-2.5 h-2.5 rounded-full bg-[#009fe3] mt-1 shrink-0"></span>
-                        <p class="text-slate-600"><strong>Normal:</strong> Ticket con SLA a tiempo y holgura mayor a 1 día.</p>
-                    </div>
-                    <div class="flex items-start gap-2">
-                        <span class="w-2.5 h-2.5 rounded-full bg-amber-500 mt-1 shrink-0"></span>
-                        <p class="text-slate-600"><strong>Alerta:</strong> Resta exactamente 1 día para la expiración del SLA.</p>
-                    </div>
-                    <div class="flex items-start gap-2">
-                        <span class="w-2.5 h-2.5 rounded-full bg-orange-500 mt-1 shrink-0"></span>
-                        <p class="text-slate-600"><strong>Crítico:</strong> El SLA expira hoy o restan 0 días.</p>
-                    </div>
-                    <div class="flex items-start gap-2">
-                        <span class="w-2.5 h-2.5 rounded-full bg-rose-500 mt-1 shrink-0"></span>
-                        <p class="text-slate-600"><strong>Vencido:</strong> El plazo del SLA ya se encuentra expirado.</p>
-                    </div>
-                </div>
-            </div>
         </aside>
 
         <!-- AREA CENTRAL DE CONTENIDO -->
         <div class="flex-grow p-8 flex flex-col gap-8 overflow-y-auto">
             
             <!-- TARJETAS KPI (Se filtran únicamente por Mes y Año) -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
                 
                 <!-- KPI 1: Activos -->
                 <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
@@ -227,13 +239,13 @@
                         <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">% Cumplimiento SLA</span>
                         <span id="kpi-sla" class="text-3xl font-black text-emerald-600">0.0%</span>
                     </div>
-                    <div class="h-11 w-11 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center text-lg shadow-sm">
-                        <i class="fa-solid fa-shield-check"></i>
+                    <div class="relative left-2 h-11 w-11 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center text-lg shadow-sm">
+                        <i class="fa-solid fa-circle-check"></i>
                     </div>
                 </div>
 
                 <!-- KPI 3: Por Vencer -->
-                <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+                <div onclick="filterTableByKPI('por_vencer')" class="risk-card bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between cursor-pointer hover:bg-slate-50 transition" data-kpi="por_vencer">
                     <div>
                         <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Por Vencer</span>
                         <span id="kpi-approaching" class="text-3xl font-black text-amber-500">0</span>
@@ -244,7 +256,7 @@
                 </div>
 
                 <!-- KPI 4: SLA Vencido (Atrasado == "Sí") -->
-                <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+                <div onclick="filterTableByKPI('vencido')" class="risk-card bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between cursor-pointer hover:bg-slate-50 transition" data-kpi="vencido">
                     <div>
                         <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">SLA Vencido</span>
                         <span id="kpi-overdue" class="text-3xl font-black text-rose-500">0</span>
@@ -254,49 +266,86 @@
                     </div>
                 </div>
 
+                <!-- KPI 5: Reabiertos -->
+                <div onclick="filterTableByKPI('reabierto')" class="risk-card bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between cursor-pointer hover:bg-slate-50 transition" data-kpi="reabierto">
+                    <div>
+                        <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Tickets Reabiertos</span>
+                        <span id="kpi-reopened" class="text-3xl font-black text-purple-600">0</span>
+                    </div>
+                    <div class="h-11 w-11 rounded-xl bg-purple-500/10 text-purple-600 flex items-center justify-center text-lg shadow-sm">
+                        <i class="fa-solid fa-rotate-right"></i>
+                    </div>
+                </div>
+
+                <!-- KPI 6: Pendiente Usuario -->
+                <div onclick="filterTableByKPI('pendiente_usuario')" class="risk-card bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between cursor-pointer hover:bg-slate-50 transition" data-kpi="pendiente_usuario">
+                    <div>
+                        <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">
+                            Pendiente Usuario
+                        </span>
+                        <span id="kpi-pending-user" class="text-3xl font-black text-orange-600">0</span>
+                    </div>
+                    <div class="h-11 w-11 rounded-xl bg-orange-500/10 text-orange-600 flex items-center justify-center text-lg shadow-sm">
+                        <i class="fa-solid fa-user-clock"></i>
+                    </div>
+                </div>
             </div>
 
             <!-- GRÁFICOS (Se filtran únicamente por Mes y Año) -->
             <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
                 
                 <!-- Desempeño por Ejecutivo -->
-                <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm xl:col-span-2 flex flex-col justify-between">
+                <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm xl:col-span-2 flex flex-col justify-start">
                     <div class="border-b border-slate-100 pb-3 mb-4">
                         <h2 class="text-xs font-bold text-[#002f56] uppercase tracking-wider"><i class="fa-solid fa-users text-[#009fe3] mr-1.5"></i> Desempeño y Carga de Agentes</h2>
                     </div>
-                    <div class="space-y-4" id="agents-chart">
+                    <div class="space-y-4 flex flex-col justify-start" id="agents-chart">
                     </div>
                 </div>
 
-                <!-- Distribución por Prioridad (Dona) -->
+                <!-- Riesgo SLA Tickets Activos -->
                 <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col">
                     <div class="border-b border-slate-100 pb-3 mb-4 flex justify-between items-center">
-                        <h2 class="text-xs font-bold text-[#002f56] uppercase tracking-wider"><i class="fa-solid fa-circle-exclamation text-[#009fe3] mr-1.5"></i> Tickets por Prioridad</h2>
+                        <h2 class="text-xs font-bold text-[#002f56] uppercase tracking-wider">
+                            <i class="fa-solid fa-triangle-exclamation text-[#009fe3] mr-1.5"></i>
+                            Riesgo SLA Tickets Activos
+                        </h2>
                     </div>
-                    <div class="flex-grow flex flex-col items-center justify-center">
-                        <div id="priority-donut" class="h-32 w-32 rounded-full flex items-center justify-center relative transition-all duration-500 shadow-inner" style="background: conic-gradient(#e2e8f0 0% 100%);">
-                            <div class="bg-white rounded-full h-24 w-24 flex flex-col items-center justify-center text-center shadow-sm">
-                                <span class="text-[9px] text-slate-400 uppercase font-black tracking-wider">Normal/Venc/Alert</span>
-                                <span id="donut-center-total" class="text-xl font-bold text-[#002f56]">0</span>
-                            </div>
+
+                    <div class="grid grid-cols-2 gap-3 flex-grow content-center">
+
+                        <div
+                            onclick="filterTableByKPI('riesgo_hoy')"
+                            class="risk-card bg-orange-50 border border-orange-200 rounded-xl p-4 text-center cursor-pointer hover:shadow-md transition"
+                            data-kpi="riesgo_hoy">
+                            <span class="text-[10px] font-bold text-orange-600 uppercase">Vencen Hoy</span>
+                            <div id="risk-today" class="text-3xl font-black text-orange-600 mt-1">0</div>
                         </div>
-                        <div class="grid grid-cols-3 gap-3 w-full mt-6 text-center text-xs">
-                            <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
-                                <span class="inline-block w-2.5 h-2.5 rounded-full bg-[#009fe3] mb-0.5"></span>
-                                <span class="text-[9px] text-slate-400 block uppercase font-bold">Normal</span>
-                                <span id="legend-normal" class="font-extrabold text-[#002f56]">0</span>
-                            </div>
-                            <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
-                                <span class="inline-block w-2.5 h-2.5 rounded-full bg-rose-500 mb-0.5"></span>
-                                <span class="text-[9px] text-slate-400 block uppercase font-bold">Vencido</span>
-                                <span id="legend-vencido" class="font-extrabold text-[#002f56]">0</span>
-                            </div>
-                            <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
-                                <span class="inline-block w-2.5 h-2.5 rounded-full bg-amber-500 mb-0.5"></span>
-                                <span class="text-[9px] text-slate-400 block uppercase font-bold">Alerta</span>
-                                <span id="legend-alerta" class="font-extrabold text-[#002f56]">0</span>
-                            </div>
+
+                        <div
+                            onclick="filterTableByKPI('riesgo_manana')"
+                            class="risk-card bg-amber-50 border border-amber-200 rounded-xl p-4 text-center cursor-pointer hover:shadow-md transition"
+                            data-kpi="riesgo_manana">
+                            <span class="text-[10px] font-bold text-amber-600 uppercase">Vencen Mañana</span>
+                            <div id="risk-tomorrow" class="text-3xl font-black text-amber-600 mt-1">0</div>
                         </div>
+
+                        <div
+                            onclick="filterTableByKPI('riesgo_tres_dias')"
+                            class="risk-card bg-yellow-50 border border-yellow-200 rounded-xl p-4 text-center cursor-pointer hover:shadow-md transition"
+                            data-kpi="riesgo_tres_dias">
+                            <span class="text-[10px] font-bold text-yellow-700 uppercase">Vencen en 3 días</span>
+                            <div id="risk-three-days" class="text-3xl font-black text-yellow-700 mt-1">0</div>
+                        </div>
+
+                        <div
+                            onclick="filterTableByKPI('riesgo_mas_tres')"
+                            class="risk-card bg-sky-50 border border-sky-200 rounded-xl p-4 text-center cursor-pointer hover:shadow-md transition"
+                            data-kpi="riesgo_mas_tres">
+                            <span class="text-[10px] font-bold text-sky-600 uppercase">+ de 3 días</span>
+                            <div id="risk-more-three" class="text-3xl font-black text-sky-600 mt-1">0</div>
+                        </div>
+
                     </div>
                 </div>
 
@@ -312,17 +361,18 @@
                         Mostrando 0 tickets
                     </span>
                 </div>
-                <div class="overflow-x-auto max-h-[350px]">
+                <div class="overflow-auto max-h-[350px]">
                     <table class="w-full text-left border-collapse text-xs">
-                        <thead>
-                            <tr class="bg-slate-50/50 text-slate-500 font-bold uppercase text-[9px] tracking-wider border-b border-slate-200">
+                        <thead class="sticky top-0 z-10">
+                            <tr class="bg-slate-50 text-slate-500 font-bold uppercase text-[9px] tracking-wider border-b border-slate-200">
                                 <th class="py-3.5 px-4"># Ticket</th>
                                 <th class="py-3.5 px-4">Asunto</th>
                                 <th class="py-3.5 px-4">Solicitante</th>
                                 <th class="py-3.5 px-4">Clínica</th>
                                 <th class="py-3.5 px-4">Expiración SLA</th>
+                                <th class="py-3.5 px-4 text-center">Días Restantes SLA</th>
+                                <th class="py-3.5 px-4">Agente Asignado</th>
                                 <th class="py-3.5 px-4 text-center">Estado</th>
-                                <th class="py-3.5 px-4 text-center">Importancia</th>
                             </tr>
                         </thead>
                         <tbody id="table-body" class="divide-y divide-slate-100 font-medium">
@@ -369,6 +419,7 @@
     <!-- MOTOR DE CÓMPUTO Y PARSEO INTERNO (EXCEL / CSV A METRICAS) -->
     <script>
         let database = [];
+        let kpiTableFilter = null;
 
         const mesesOrdenados = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
         const mesesEspanolMapa = {
@@ -476,12 +527,42 @@
                         const clinica = clasificarClinica(valEmail);
 
                         // DAX calculations
-                        const slaPermitido = 3 * (valReopen + 1);
+                        const slaPermitido = 2 * (valReopen + 1);
                         const diasHabiles = calcularDiasHabilesSLA(createdDate, closedDate);
                         
                         let cumpleSla = null;
-                        if (closedDate && diasHabiles !== null) {
-                            cumpleSla = (diasHabiles <= slaPermitido) ? "Cumple" : "No Cumple";
+
+                        if (closedDate) {
+
+                            // Prioridad: utilizar la Fecha de Expiración SLA
+                            if (expirationDate) {
+
+                                const cierre = new Date(
+                                    closedDate.getFullYear(),
+                                    closedDate.getMonth(),
+                                    closedDate.getDate()
+                                );
+
+                                const expiracion = new Date(
+                                    expirationDate.getFullYear(),
+                                    expirationDate.getMonth(),
+                                    expirationDate.getDate()
+                                );
+
+                                cumpleSla =
+                                    cierre.getTime() <= expiracion.getTime()
+                                        ? "Cumple"
+                                        : "No Cumple";
+                            }
+
+                            // Respaldo para casos donde la fecha de expiración viene vacía
+                            else if (diasHabiles !== null) {
+
+                                cumpleSla =
+                                    diasHabiles <= slaPermitido
+                                        ? "Cumple"
+                                        : "No Cumple";
+                            }
                         }
 
                         let diasRestantes = 0;
@@ -536,6 +617,10 @@
                             importancia: importancia,
                             year: createdDate ? createdDate.getFullYear() : hoy.getFullYear(),
                             month: createdDate ? mesesEspanolMapa[createdDate.getMonth() + 1] : "Enero",
+
+                            closeYear: closedDate ? closedDate.getFullYear() : null,
+                            closeMonth: closedDate ? mesesEspanolMapa[closedDate.getMonth() + 1] : null,
+
                             helpTopic: String(valHelpTopic)
                         };
                     });
@@ -580,6 +665,27 @@
         function formatDateToString(d) {
             const pad = (n) => String(n).padStart(2, '0');
             return `${pad(d.getDate())}-${pad(d.getMonth()+1)}-${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+        }
+
+        function diferenciaDiasCalendarioDesdeString(fechaStr) {
+            if (!fechaStr) return null;
+
+            const soloFecha = fechaStr.split(" ")[0];
+            const partes = soloFecha.split("-");
+
+            if (partes.length !== 3) return null;
+
+            const dia = parseInt(partes[0], 10);
+            const mes = parseInt(partes[1], 10) - 1;
+            const anio = parseInt(partes[2], 10);
+
+            const fecha = new Date(anio, mes, dia);
+            const hoy = new Date();
+
+            fecha.setHours(0, 0, 0, 0);
+            hoy.setHours(0, 0, 0, 0);
+
+            return Math.round((fecha - hoy) / (1000 * 60 * 60 * 24));
         }
 
         function clasificarClinica(email) {
@@ -663,82 +769,241 @@
             else if (mesesUnicos.length > 0) selectMonth.value = mesesUnicos[mesesUnicos.length - 1];
         }
 
-        function initOtherDropdowns() {
-            // Agentes asignados
-            const selectAgent = document.getElementById("filter-agent");
-            const agentesUnicos = [...new Set(database.map(t => t.agent))].sort();
-            selectAgent.innerHTML = '<option value="Todos">Todos los Agentes</option>';
-            agentesUnicos.forEach(a => {
-                const opt = document.createElement("option");
-                opt.value = a; opt.innerText = a;
-                selectAgent.appendChild(opt);
-            });
+function initOtherDropdowns() {
 
-            // Solicitantes
-            const selectRequester = document.getElementById("filter-requester");
-            const solicitantesUnicos = [...new Set(database.map(t => t.requester))].sort();
-            selectRequester.innerHTML = '<option value="Todos">Todos los Solicitantes</option>';
-            solicitantesUnicos.forEach(s => {
-                const opt = document.createElement("option");
-                opt.value = s; opt.innerText = s;
-                selectRequester.appendChild(opt);
-            });
+    // Agentes asignados
+    const selectAgent = document.getElementById("filter-agent");
+    const agentesUnicos = [...new Set(database.map(t => t.agent))].sort();
 
-            // Clínicas
-            const selectClinic = document.getElementById("filter-clinic");
-            const clinicasUnicas = [...new Set(database.map(t => t.clinicas))].sort();
-            selectClinic.innerHTML = '<option value="Todas">Todas las Clínicas</option>';
-            clinicasUnicas.forEach(c => {
-                const opt = document.createElement("option");
-                opt.value = c; opt.innerText = c;
-                selectClinic.appendChild(opt);
-            });
+    selectAgent.innerHTML = '<option value="Todos">Todos los Agentes</option>';
 
-            // Tema de Ayuda
-            const selectHelpTopic = document.getElementById("filter-helptopic");
-            const temasUnicos = [...new Set(database.map(t => t.helpTopic))].sort();
-            selectHelpTopic.innerHTML = '<option value="Todos">Todos los Temas</option>';
-            temasUnicos.forEach(t => {
-                const opt = document.createElement("option");
-                opt.value = t; opt.innerText = t;
-                selectHelpTopic.appendChild(opt);
-            });
+    agentesUnicos.forEach(a => {
+        const opt = document.createElement("option");
+        opt.value = a;
+        opt.innerText = a;
+        selectAgent.appendChild(opt);
+    });
+
+    // Clínicas
+    const selectClinic = document.getElementById("filter-clinic");
+    const clinicasUnicas = [...new Set(database.map(t => t.clinicas))].sort();
+
+    selectClinic.innerHTML = '<option value="Todas">Todas las Clínicas</option>';
+
+    clinicasUnicas.forEach(c => {
+        const opt = document.createElement("option");
+        opt.value = c;
+        opt.innerText = c;
+        selectClinic.appendChild(opt);
+    });
+
+    // Tema de Ayuda
+    const selectHelpTopic = document.getElementById("filter-helptopic");
+    const temasUnicos = [...new Set(database.map(t => t.helpTopic))].sort();
+
+    selectHelpTopic.innerHTML = '<option value="Todos">Todos los Temas</option>';
+
+    temasUnicos.forEach(t => {
+        const opt = document.createElement("option");
+        opt.value = t;
+        opt.innerText = t;
+        selectHelpTopic.appendChild(opt);
+    });
+
+    // Estados (solo tickets activos)
+    const selectState = document.getElementById("filter-state");
+
+    const estadosUnicos = [...new Set(
+        database
+            .filter(t => t.closedDate === "")
+            .map(t => t.state)
+    )].sort();
+
+    selectState.innerHTML = '<option value="Todos">Todos los Estados</option>';
+
+    estadosUnicos.forEach(e => {
+        const opt = document.createElement("option");
+        opt.value = e;
+        opt.innerText = e;
+        selectState.appendChild(opt);
+    });
+}
+
+function filterTableByKPI(tipo) {
+
+    // Si hago clic nuevamente en la misma tarjeta, se quita el filtro
+    if (kpiTableFilter === tipo) {
+        kpiTableFilter = null;
+    } else {
+        kpiTableFilter = tipo;
+    }
+
+    // Quitar selección de todas las tarjetas
+    document.querySelectorAll(".risk-card").forEach(card => {
+        card.classList.remove("kpi-selected");
+    });
+
+    // Resaltar la tarjeta seleccionada
+    if (kpiTableFilter !== null) {
+
+        const card = document.querySelector(
+            `[data-kpi="${kpiTableFilter}"]`
+        );
+
+        if (card) {
+            card.classList.add("kpi-selected");
+        }
+    }
+
+    applyFilters();
+}
+
+function applyFilters() {
+
+    const yearVal = parseInt(document.getElementById("filter-year").value);
+    const monthVal = document.getElementById("filter-month").value;
+
+    const requesterVal = document
+        .getElementById("filter-requester")
+        .value
+        .toLowerCase()
+        .trim();
+
+    const selectedDate = document.getElementById("filter-date")?.value || "";
+
+    const agentVal = document.getElementById("filter-agent").value;
+
+    const clinicVal = document.getElementById("filter-clinic").value;
+    const importanceVal = document.getElementById("filter-importance").value;
+    const stateVal = document.getElementById("filter-state").value;
+    const helptopicVal = document.getElementById("filter-helptopic").value;
+
+    // 1. Filtrar por Período -> KPIs, gráficos medios y temas de ayuda
+    const periodData = database.filter(ticket => {
+        return ticket.closeYear === yearVal && ticket.closeMonth === monthVal;
+    });
+
+    // 2. Filtrar Detalle Transaccional
+    const tableData = database.filter(ticket => {
+
+        // Solo tickets activos
+        const ticketActivo = ticket.closedDate === "";
+
+        // Agente asignado
+        const matchAgent =
+            (agentVal === "Todos") ||
+            (ticket.agent === agentVal);
+
+        // Solicitante por búsqueda libre
+        const matchRequester =
+            requesterVal === "" ||
+            ticket.requester.toLowerCase().includes(requesterVal);
+
+        const matchClinic =
+            (clinicVal === "Todas") ||
+            (ticket.clinicas === clinicVal);
+
+        let matchImportance = true;
+
+        if (importanceVal === "riesgo_hoy") {
+            matchImportance = ticket.diasRestantesSLA === 0;
         }
 
-        function applyFilters() {
-            const yearVal = parseInt(document.getElementById("filter-year").value);
-            const monthVal = document.getElementById("filter-month").value;
-            const agentVal = document.getElementById("filter-agent").value;
-            const requesterVal = document.getElementById("filter-requester").value;
-            const clinicVal = document.getElementById("filter-clinic").value;
-            const importanceVal = document.getElementById("filter-importance").value;
-            const stateVal = document.getElementById("filter-state").value;
-            const helptopicVal = document.getElementById("filter-helptopic").value;
-
-            // 1. Filtrar por Período -> KPIs, gráficos medios y temas de ayuda
-            const periodData = database.filter(ticket => {
-                return ticket.year === yearVal && ticket.month === monthVal;
-            });
-
-            // 2. Filtrar el Detalle Transaccional de Casos con filtros cruzados
-            const tableData = periodData.filter(ticket => {
-                const matchAgent = (agentVal === "Todos") || (ticket.agent === agentVal);
-                const matchRequester = (requesterVal === "Todos") || (ticket.requester === requesterVal);
-                const matchClinic = (clinicVal === "Todas") || (ticket.clinicas === clinicVal);
-                const matchImportance = (importanceVal === "Todas") || (ticket.importancia === importanceVal);
-                const matchState = (stateVal === "Todos") || (ticket.state === stateVal);
-                const matchHelpTopic = (helptopicVal === "Todos") || (ticket.helpTopic === helptopicVal);
-
-                return matchAgent && matchRequester && matchClinic && matchImportance && matchState && matchHelpTopic;
-            });
-
-            renderDashboard(periodData, tableData);
+        if (importanceVal === "riesgo_manana") {
+            matchImportance = ticket.diasRestantesSLA === 1;
         }
+
+        if (importanceVal === "riesgo_tres_dias") {
+            matchImportance = ticket.diasRestantesSLA >= 2 &&
+                            ticket.diasRestantesSLA <= 3;
+        }
+
+        if (importanceVal === "riesgo_mas_tres") {
+            matchImportance = ticket.diasRestantesSLA > 3;
+        }
+
+        if (importanceVal === "vencido") {
+            matchImportance = ticket.diasRestantesSLA < 0;
+        }
+
+        const matchState =
+            (stateVal === "Todos") ||
+            (ticket.state === stateVal);
+
+        const matchHelpTopic =
+            (helptopicVal === "Todos") ||
+            (ticket.helpTopic === helptopicVal);
+
+// Filtro Fecha Expiración SLA
+let matchDate = true;
+
+if (selectedDate && ticket.slaExpiration) {
+
+    const fechaTicket =
+        ticket.slaExpiration
+            .split(" ")[0]
+            .split("-")
+            .reverse()
+            .join("-");
+
+    matchDate = fechaTicket === selectedDate;
+}
+
+        let matchKPI = true;
+
+        if (kpiTableFilter === "por_vencer") {
+            matchKPI = ticket.diasRestantesSLA >= 0 && ticket.diasRestantesSLA <= 1;
+        }
+
+        if (kpiTableFilter === "vencido") {
+            matchKPI = ticket.diasRestantesSLA < 0;
+        }
+
+        if (kpiTableFilter === "reabierto") {
+            matchKPI = String(ticket.state).trim().toLowerCase() === "reabierto";
+        }
+
+        if (kpiTableFilter === "pendiente_usuario") {
+            matchKPI = String(ticket.state).trim().toLowerCase() === "pendiente (usuario)";
+        }
+
+        const diasCalendario = diferenciaDiasCalendarioDesdeString(ticket.slaExpiration);
+
+        if (kpiTableFilter === "riesgo_hoy") {
+            matchKPI = diasCalendario === 0;
+        }
+
+        if (kpiTableFilter === "riesgo_manana") {
+            matchKPI = diasCalendario === 1;
+        }
+
+        if (kpiTableFilter === "riesgo_tres_dias") {
+            matchKPI = diasCalendario >= 2 &&
+                    diasCalendario <= 3;
+        }
+
+        if (kpiTableFilter === "riesgo_mas_tres") {
+            matchKPI = diasCalendario > 3;
+        }
+
+        return ticketActivo &&
+            matchAgent && 
+            matchRequester &&
+            matchClinic &&
+            matchImportance &&
+            matchState &&
+            matchHelpTopic &&
+            matchDate &&
+            matchKPI;
+    });
+
+    renderDashboard(periodData, tableData);
+}
 
         function renderDashboard(periodData, tableData) {
             // KPI 1: Activos
-            const active = periodData.filter(t => ["Nuevo", "Abierto", "Reabierto"].includes(t.state));
-            document.getElementById("kpi-active").innerText = active.length;
+            const activosTotales = database.filter(t => t.closedDate === "");
+            document.getElementById("kpi-active").innerText = activosTotales.length;
 
             // KPI 2: % SLA
             const cerrados = periodData.filter(t => t.closedDate !== "");
@@ -747,19 +1012,63 @@
             document.getElementById("kpi-sla").innerText = pctSla + "%";
 
             // KPI 3: Por Vencer
-            const porVencer = periodData.filter(t => t.overdue === "No" && ["Nuevo", "Abierto", "Reabierto"].includes(t.state));
+            const porVencer = activosTotales.filter(t =>
+                t.diasRestantesSLA >= 0 &&
+                t.diasRestantesSLA <= 1
+            );
             document.getElementById("kpi-approaching").innerText = porVencer.length;
 
             // KPI 4: SLA Vencido
-            const vencidos = periodData.filter(t => t.overdue === "Sí");
+            const vencidos = activosTotales.filter(t =>
+                t.diasRestantesSLA < 0
+            );
             document.getElementById("kpi-overdue").innerText = vencidos.length;
 
+            // KPI 5: Tickets Reabiertos
+            const reabiertos = activosTotales.filter(t =>
+                String(t.state).trim().toLowerCase() === "reabierto"
+            );
+
+            document.getElementById("kpi-reopened").innerText = reabiertos.length;
+
+            // KPI 6: Pendiente Usuario
+            const pendientesUsuario = activosTotales.filter(t =>
+                String(t.state).trim().toLowerCase() === "pendiente (usuario)"
+            );
+
+            document.getElementById("kpi-pending-user").innerText = pendientesUsuario.length;
+
             // Gráfico: Desempeño Ejecutivos
-            const agentesList = [...new Set(database.map(t => t.agent))].sort();
+            const agentesList = [...new Set(
+                periodData
+                    .filter(t => t.closedDate !== "")
+                    .map(t => t.agent)
+            )]
+            .map(agent => {
+                const agCerrado = periodData.filter(t => t.agent === agent && t.closedDate !== "");
+                const agCumple = agCerrado.filter(t => t.cumpleSla === "Cumple").length;
+
+                const slaAgent = agCerrado.length > 0
+                    ? Math.round((agCumple / agCerrado.length) * 100)
+                    : 0;
+
+                return {
+                    agent: agent,
+                    slaAgent: slaAgent,
+                    cerrados: agCerrado.length
+                };
+            })
+            .sort((a, b) => {
+                if (b.slaAgent !== a.slaAgent) {
+                    return b.slaAgent - a.slaAgent;
+                }
+                return b.cerrados - a.cerrados;
+            });
             const agentsContainer = document.getElementById("agents-chart");
             agentsContainer.innerHTML = "";
 
-            agentesList.forEach(agent => {
+            agentesList.forEach(item => {
+                const agent = item.agent;
                 const agCerrado = periodData.filter(t => t.agent === agent && t.closedDate !== "");
                 const agCumple = agCerrado.filter(t => t.cumpleSla === "Cumple").length;
                 const agActivos = periodData.filter(t => t.agent === agent && ["Nuevo", "Abierto", "Reabierto"].includes(t.state)).length;
@@ -786,37 +1095,35 @@
                 `;
             });
 
-            // Gráfico Dona: Prioridad
-            const normCount = periodData.filter(t => t.importancia === "Normal").length;
-            const vencCount = periodData.filter(t => t.importancia === "Vencido").length;
-            const alertCount = periodData.filter(t => t.importancia === "Alerta").length;
-            const totalDona = normCount + vencCount + alertCount;
+            // Riesgo SLA Tickets Activos por día calendario
+            const vencenHoy = activosTotales.filter(t =>
+                diferenciaDiasCalendarioDesdeString(t.slaExpiration) === 0
+            ).length;
 
-            document.getElementById("legend-normal").innerText = normCount;
-            document.getElementById("legend-vencido").innerText = vencCount;
-            document.getElementById("legend-alerta").innerText = alertCount;
-            document.getElementById("donut-center-total").innerText = totalDona;
+            const vencenManana = activosTotales.filter(t =>
+                diferenciaDiasCalendarioDesdeString(t.slaExpiration) === 1
+            ).length;
 
-            const donut = document.getElementById("priority-donut");
-            if (totalDona > 0) {
-                const normPct = (normCount / totalDona) * 100;
-                const vencPct = (vencCount / totalDona) * 100;
+            const vencenTresDias = activosTotales.filter(t =>
+                diferenciaDiasCalendarioDesdeString(t.slaExpiration) >= 2 &&
+                diferenciaDiasCalendarioDesdeString(t.slaExpiration) <= 3
+            ).length;
 
-                donut.style.background = `conic-gradient(
-                    #009fe3 0% ${normPct}%, 
-                    #f43f5e ${normPct}% ${normPct + vencPct}%, 
-                    #f59e0b ${normPct + vencPct}% 100%
-                )`;
-            } else {
-                donut.style.background = "#e2e8f0";
-            }
+            const masDeTresDias = activosTotales.filter(t =>
+                diferenciaDiasCalendarioDesdeString(t.slaExpiration) > 3
+            ).length;
+
+            document.getElementById("risk-today").innerText = vencenHoy;
+            document.getElementById("risk-tomorrow").innerText = vencenManana;
+            document.getElementById("risk-three-days").innerText = vencenTresDias;
+            document.getElementById("risk-more-three").innerText = masDeTresDias;
 
             // Detalle Transaccional de Casos
             const body = document.getElementById("table-body");
             body.innerHTML = "";
 
             if (tableData.length === 0) {
-                body.innerHTML = '<tr><td colspan="7" class="py-8 text-center text-slate-400 font-bold">Sin resultados para los filtros actuales</td></tr>';
+                body.innerHTML = '<tr><td colspan="8" class="py-8 text-center text-slate-400 font-bold">Sin resultados para los filtros actuales</td></tr>';
             } else {
                 tableData.forEach(t => {
                     let alertClass = "bg-slate-100 text-slate-700";
@@ -829,18 +1136,30 @@
                     body.innerHTML += `
                         <tr class="hover:bg-slate-50 transition-colors">
                             <td class="py-3.5 px-4 font-mono font-bold text-[#009fe3]">${t.id}</td>
-                            <td class="py-3.5 px-4 font-bold text-[#002f56] truncate max-w-[200px]" title="${t.subject}">${t.subject}</td>
+
+                            <td class="py-3.5 px-4 font-bold text-[#002f56] whitespace-normal break-words min-w-[450px]">
+                                ${t.subject}
+                            </td>
+
                             <td class="py-3.5 px-4 text-slate-600">${t.requester}</td>
+
                             <td class="py-3.5 px-4 text-slate-500">${t.clinicas}</td>
-                            <td class="py-3.5 px-4 text-slate-500 font-mono">${t.slaExpiration}</td>
+
+                            <td class="py-3.5 px-4 text-slate-500 font-mono">
+                                ${t.slaExpiration}
+                            </td>
+
+                            <td class="py-3.5 px-4 text-center font-bold">
+                                ${t.diasRestantesSLA}
+                            </td>
+
+                            <td class="py-3.5 px-4 text-slate-600">
+                                ${t.agent}
+                            </td>
+
                             <td class="py-3.5 px-4 text-center">
                                 <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-slate-100 text-slate-600 border border-slate-200">
                                     ${t.state}
-                                </span>
-                            </td>
-                            <td class="py-3.5 px-4 text-center">
-                                <span class="px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wide inline-block ${alertClass}">
-                                    ${t.importancia}
                                 </span>
                             </td>
                         </tr>
@@ -850,13 +1169,13 @@
             document.getElementById("table-badge").innerText = `Mostrando ${tableData.length} de ${periodData.length} del período`;
 
             // Renderizar gráficos inferiores
-            renderTopicsChart(periodData);
+            renderTopicsChart(activosTotales);
             renderEvolutionChart(database);
         }
 
         // Gráfico de temas de ayuda activos
         function renderTopicsChart(periodData) {
-            const activeTickets = periodData.filter(t => ["Nuevo", "Abierto", "Reabierto"].includes(t.state));
+            const activeTickets = periodData;
             const topicCounts = {};
             activeTickets.forEach(t => {
                 const topic = t.helpTopic || "Sin Clasificar";
@@ -943,17 +1262,26 @@
             });
         }
 
-        function resetFilters() {
-            document.getElementById("filter-agent").value = "Todos";
-            document.getElementById("filter-requester").value = "Todos";
-            document.getElementById("filter-clinic").value = "Todas";
-            document.getElementById("filter-importance").value = "Todas";
-            document.getElementById("filter-state").value = "Todos";
-            document.getElementById("filter-helptopic").value = "Todos";
-            
-            initPeriodDropdowns();
-            applyFilters();
-        }
+function exportToPDF() {
+    window.print();
+}
+
+function resetFilters() {
+    document.getElementById("filter-requester").value = "";
+    document.getElementById("filter-agent").value = "Todos";
+    document.getElementById("filter-clinic").value = "Todas";
+    document.getElementById("filter-importance").value = "Todas";
+    document.getElementById("filter-state").value = "Todos";
+    document.getElementById("filter-helptopic").value = "Todos";
+
+    const fechaFiltro = document.getElementById("filter-date");
+    if (fechaFiltro) {
+        fechaFiltro.value = "";
+    }
+
+    initPeriodDropdowns();
+    applyFilters();
+}
     </script>
 </body>
 </html>
