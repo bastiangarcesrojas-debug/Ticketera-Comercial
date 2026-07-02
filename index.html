@@ -244,10 +244,10 @@
                     </div>
                 </div>
 
-                <!-- KPI 3: Por Vencer -->
+                <!-- KPI 3: Tickets a Tiempo -->
                 <div onclick="filterTableByKPI('por_vencer')" class="risk-card bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between cursor-pointer hover:bg-slate-50 transition" data-kpi="por_vencer">
                     <div>
-                        <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Por Vencer</span>
+                        <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Tickets a Tiempo</span>
                         <span id="kpi-approaching" class="text-3xl font-black text-amber-500">0</span>
                     </div>
                     <div class="h-11 w-11 rounded-xl bg-amber-500/10 text-amber-600 flex items-center justify-center text-lg shadow-sm">
@@ -964,7 +964,8 @@ if (selectedDate && ticket.slaExpiration) {
         let matchKPI = true;
 
         if (kpiTableFilter === "por_vencer") {
-            matchKPI = ticket.diasRestantesSLA >= 0 && ticket.diasRestantesSLA <= 1;
+            const fechaExpiracion = convertirStringAFecha(ticket.slaExpiration);
+            matchKPI = fechaExpiracion && fechaExpiracion >= new Date();
         }
 
         if (kpiTableFilter === "vencido") {
@@ -1024,11 +1025,11 @@ if (selectedDate && ticket.slaExpiration) {
             const pctSla = cerrados.length > 0 ? ((cumpleCount / cerrados.length) * 100).toFixed(1) : "100.0";
             document.getElementById("kpi-sla").innerText = pctSla + "%";
 
-            // KPI 3: Por Vencer
-            const porVencer = activosTotales.filter(t =>
-                t.diasRestantesSLA >= 0 &&
-                t.diasRestantesSLA <= 1
-            );
+            // KPI 3: Tickets a Tiempo
+            const porVencer = activosTotales.filter(t => {
+                const fechaExpiracion = convertirStringAFecha(t.slaExpiration);
+                return fechaExpiracion && fechaExpiracion >= new Date();
+            });
             document.getElementById("kpi-approaching").innerText = porVencer.length;
 
             // KPI 4: SLA Vencido
